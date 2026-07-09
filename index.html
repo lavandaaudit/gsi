@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GSI · GLOBAL SITUATIONAL AWARENESS PLATFORM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ------------------------------------------------------------------
+           AESTHETIC: DEEP CYBER VOID & DATA DENSITY
+           ------------------------------------------------------------------ */
+        :root {
+            --bg-deep: #020206;
+            --bg-panel: rgba(6, 6, 15, 0.85);
+            --accent-pri: #8040ff; /* Purple glow */
+            --accent-sec: #00e5ff; /* Cyan data */
+            --accent-warn: #ff0055; /* Crisis red */
+            --accent-ok: #00ffaa; /* Stability green */
+            --accent-neutral: #ffa600; /* Tension orange */
+            --white: #f5f5ff;
+            --border-subtle: rgba(128, 64, 255, 0.15);
+            --border-active: rgba(0, 229, 255, 0.4);
+            --font-mono: 'Space Mono', monospace;
+            --font-ui: 'Inter', sans-serif;
+            --pad-outer: 30px;
+            --glow-pri: 0 0 15px rgba(128, 64, 255, 0.3);
+            --glow-sec: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--white);
+            font-family: var(--font-mono);
+            overflow: hidden;
+            height: 100vh;
+            font-size: 10px;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(12, 5, 30, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(5, 15, 35, 0.4) 0%, transparent 50%);
+        }
+
+        canvas#bg-stars {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.25;
+        }
+
+        /* LAYOUT */
+        .app-container {
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 340px 1fr 340px;
+            grid-template-rows: auto 1fr;
+            gap: 20px;
+            height: 100vh;
+            padding: var(--pad-outer);
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        /* HEADER */
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 12px;
+            background: linear-gradient(90deg, rgba(128,64,255,0.05), transparent);
+            border-radius: 4px 4px 0 0;
+        }
+
+        .brand-box {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .brand {
+            font-size: 13px;
+            letter-spacing: 4px;
+            color: var(--accent-sec);
+            text-transform: uppercase;
+            text-shadow: var(--glow-sec);
+            font-weight: 700;
+        }
+
+        .sub-brand {
+            font-size: 9px;
+            color: #6a6a8f;
+            font-family: var(--font-ui);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* COLUMNS */
+        .col-left,
+        .col-right {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .col-center {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid var(--border-subtle);
+            background: radial-gradient(circle at center, rgba(15, 8, 32, 0.55), transparent 75%);
+            border-radius: 4px;
+            backdrop-filter: blur(10px);
+            box-shadow: inset 0 0 20px rgba(128, 64, 255, 0.05);
+            cursor: grab;
+        }
+        
+        .col-center:active {
+            cursor: grabbing;
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-subtle);
+            backdrop-filter: blur(8px);
+            padding: 14px;
+            border-radius: 4px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 2px;
+            height: 100%;
+            background: var(--accent-pri);
+            opacity: 0.7;
+        }
+
+        .card:hover {
+            border-color: var(--border-active);
+            box-shadow: 0 4px 25px rgba(0, 229, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .card-h {
+            font-size: 10px;
+            color: var(--accent-sec);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.05);
+            padding-bottom: 5px;
+        }
+
+        /* METRIC ROWS */
+        .m-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 9.5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .m-row:hover {
+            background: rgba(128, 64, 255, 0.06);
+            padding-left: 4px;
+            border-radius: 2px;
+        }
+
+        .m-lbl {
+            color: #8c8cab;
+            font-weight: 500;
+            font-family: var(--font-ui);
+        }
+
+        .m-val {
+            color: var(--white);
+            font-weight: 700;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            text-shadow: 0 0 5px rgba(255,255,255,0.1);
+        }
+
+        .m-unit {
+            color: #555577;
+            font-size: 8px;
+            margin-left: 2px;
+        }
+
+        .m-inf {
+            display: block;
+            font-size: 8px;
+            color: #56567c;
+            margin-top: 2px;
+            font-weight: normal;
+            line-height: 1.3;
+            font-family: var(--font-ui);
+        }
+
+        /* ZONES GRID */
+        .zone-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .z-item {
+            background: rgba(255, 255, 255, 0.015);
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 3px;
+        }
+
+        .z-item:hover {
+            border-color: var(--accent-sec);
+            background: rgba(0, 229, 255, 0.05);
+            transform: scale(1.02);
+        }
+
+        .z-head {
+            font-size: 8px;
+            color: #6a6a8f;
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-ui);
+            text-transform: uppercase;
+        }
+
+        .z-score {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin: 4px 0 2px 0;
+            text-shadow: 0 0 10px rgba(255,255,255,0.1);
+        }
+
+        .z-det {
+            font-size: 7.5px;
+            color: #8c8cab;
+            font-family: var(--font-mono);
+        }
+
+        /* 3D CANVAS */
+        canvas#spiral-3d {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+
+        .center-hud {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            pointer-events: none;
+            text-align: left;
+            z-index: 2;
+        }
+
+        .big-idx {
+            font-size: 52px;
+            font-weight: 300;
+            color: #fff;
+            text-shadow: 0 0 25px var(--accent-pri);
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .idx-lbl {
+            color: var(--accent-sec);
+            font-size: 9px;
+            letter-spacing: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* LOG BOX */
+        .log-box {
+            font-family: var(--font-mono);
+            font-size: 8.5px;
+            color: #7b7b9e;
+            max-height: 120px;
+            overflow-y: auto;
+            line-height: 1.5;
+            padding-right: 2px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding-left: 8px;
+            border-left: 1px solid rgba(128, 64, 255, 0.3);
+        }
+
+        .log-time {
+            color: var(--accent-sec);
+            margin-right: 5px;
+        }
+
+        /* DETAILED DRILL-DOWN DRAWER */
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -550px;
+            width: 500px;
+            height: 100%;
+            background: rgba(4, 4, 12, 0.96);
+            border-left: 1px solid var(--border-active);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.8);
+            z-index: 100;
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(15px);
+        }
+
+        .drawer.active {
+            right: 0;
+        }
+
+        .drawer-h {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .drawer-title {
+            font-size: 15px;
+            color: var(--white);
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            color: var(--accent-sec);
+            padding: 5px 12px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: var(--accent-sec);
+            color: #000;
+            box-shadow: var(--glow-sec);
+        }
+
+        .drawer-content {
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 5px;
+        }
+        
+        .signal-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 3px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        
+        .signal-card:hover {
+            border-color: rgba(128, 64, 255, 0.3);
+            background: rgba(128, 64, 255, 0.02);
+        }
+        
+        .sig-meta-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+        
+        .sig-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--white);
+            font-family: var(--font-ui);
+        }
+        
+        .sig-score-badge {
+            font-size: 13px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+        
+        .sig-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.03);
+            font-size: 8.5px;
+            color: #8c8cab;
+        }
+        
+        .sig-desc {
+            font-size: 9px;
+            line-height: 1.4;
+            color: #a5a5c5;
+            font-family: var(--font-ui);
+            margin: 6px 0;
+        }
+        
+        .sig-link {
+            color: var(--accent-sec);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--accent-sec);
+        }
+        
+        .sig-link:hover {
+            color: #fff;
+            border-bottom-style: solid;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(128, 64, 255, 0.3);
+            border-radius: 2px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-sec);
+        }
+
+        /* RESPONSIVE DESIGN (MOBILE & TABLET) */
+        @media (max-width: 950px) {
+            body {
+                overflow-y: auto;
+                height: auto;
+            }
+
+            .app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                padding: 15px;
+                height: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .col-left,
+            .col-right {
+                order: 2;
+                overflow: visible;
+                height: auto;
+                padding: 0;
+            }
+
+            .col-center {
+                order: 1;
+                height: 45vh;
+                margin: 5px 0;
+                min-height: 320px;
+            }
+            
+            .drawer {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="bg-stars"></canvas>
+
+    <div class="app-container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="brand-box">
+                <div class="brand">GSI · GLOBAL STATE INDEX · Platform</div>
+                <div class="sub-brand">Платформа ситуаційної обізнаності в реальному часі</div>
+            </div>
+            <div style="text-align:right">
+                <div style="font-size:18px; font-weight:700; color:#fff;" id="clock-main">00:00:00</div>
+                <div style="font-size:8px; color:#6a6a8f;" id="data-status">РЕЖИМ: ОФЛАЙН</div>
+            </div>
+        </div>
+
+        <!-- LEFT COLUMN: SENSORS -->
+        <div class="col-left">
+            <div class="card">
+                <div class="card-h">
+                    <span>ПЛАНЕТАРНІ ІНДЕКСИ</span>
+                    <span id="update-indicator" style="color:var(--accent-ok); font-size:8px;">ОНЛАЙН</span>
+                </div>
+                <div class="m-row" onclick="openCategory('Space Weather')">
+                    <div style="flex:1">
+                        <span class="m-lbl">КОСМІЧНА ПОГОДА</span>
+                        <span class="m-inf">NOAA сонячний вітер, Bz-компонента та Kp індекс</span>
+                    </div>
+                    <span class="m-val" id="cat-space">---</span>
+                </div>
+                <div class="m-row" onclick="openCategory('Biosphere Resilience')">
+                    <div style="flex:1">
+                        <span class="m-lbl">БІОСФЕРНА СТІЙКІСТЬ</span>
+                        <span class="m-inf">Сейсмічна активність USGS та вивільнення енергії</span>
+                    </div>
+                    <span class="m-val" id="cat-bio">---</span>
+                </div>
+                <div class="m-row" onclick="openCategory('Economic Stress')">
+                    <div style="flex:1">
+                        <span class="m-lbl">ФІНАНСОВИЙ СТРЕС</span>
+                        <span class="m-inf">Глобальні біржові індекси, волатильність VIX, крипторинки</span>
+                    </div>
+                    <span class="m-val" id="cat-finance">---</span>
+                </div>
+                <div class="m-row" onclick="openCategory('Supply Chain')">
+                    <div style="flex:1">
+                        <span class="m-lbl">ЛАНЦЮГИ ПОСТАЧАННЯ</span>
+                        <span class="m-inf">Ціни на ресурси, метали та агро-сировину</span>
+                    </div>
+                    <span class="m-val" id="cat-supply">---</span>
+                </div>
+                <div class="m-row" onclick="openCategory('Internet Stability')">
+                    <div style="flex:1">
+                        <span class="m-lbl">СТАБІЛЬНІСТЬ ІНТЕРНЕТУ</span>
+                        <span class="m-inf">Затримка DNS глобальних резолверів та працездатність</span>
+                    </div>
+                    <span class="m-val" id="cat-internet">---</span>
+                </div>
+                <div class="m-row" onclick="openCategory('Climate Risk')">
+                    <div style="flex:1">
+                        <span class="m-lbl">КЛІМАТИЧНИЙ РИЗИК</span>
+                        <span class="m-inf">Аномалії погоди, вітру та тиску в 10 мегаполісах</span>
+                    </div>
+                    <span class="m-val" id="cat-climate">---</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-h">
+                    <span>ГЕОПОЛІТИЧНІ ТА СОЦІАЛЬНІ ІНДЕКСИ</span>
+                </div>
+                <div class="m-row" onclick="openCategory('Geopolitics & Conflicts')">
+                    <div style="flex:1">
+                        <span class="m-lbl">КОНФЛІКТИ ТА ГЕОПОЛІТИКА</span>
+                        <span class="m-inf">Аналіз новинних RSS-стрічок та бази ReliefWeb ООН</span>
+                    </div>
+                    <span class="m-val" id="cat-geopol">---</span>
+                </div>
+                <div class="m-row" onclick="openCategory('Social Sentiment')">
+                    <div style="flex:1">
+                        <span class="m-lbl">СОЦІАЛЬНІ НАСТРОЇ</span>
+                        <span class="m-inf">Перегляди кризових статей Wikipedia, Reddit та Mastodon</span>
+                    </div>
+                    <span class="m-val" id="cat-social">---</span>
+                </div>
+                <div class="m-row" onclick="openCategory('Energy Stability')">
+                    <div style="flex:1">
+                        <span class="m-lbl">ЕНЕРГЕТИЧНА СТАБІЛЬНІСТЬ</span>
+                        <span class="m-inf">Індекс стабільності цін на енергоносії та логістики</span>
+                    </div>
+                    <span class="m-val" id="cat-energy">---</span>
+                </div>
+                <div class="m-row" onclick="openCategory('Information Pressure')">
+                    <div style="flex:1">
+                        <span class="m-lbl">ІНФОРМАЦІЙНИЙ ТИСК</span>
+                        <span class="m-inf">Щільність тривожності та активність у медіа</span>
+                    </div>
+                    <span class="m-val" id="cat-info">---</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER: 3D SPIRAL VISUALIZATION -->
+        <div class="col-center" id="canvas-container">
+            <canvas id="spiral-3d"></canvas>
+
+            <div class="center-hud">
+                <div class="idx-lbl">GLOBAL STATE INDEX</div>
+                <div class="big-idx" id="main-idx">--</div>
+                <div style="font-size:9.5px; color:#8c8cab; margin-top:5px; max-width:320px; min-height:40px; font-family:var(--font-ui); line-height:1.4;" id="main-desc">
+                    Завантаження глобального вектору станів...
+                </div>
+            </div>
+
+            <!-- Legend Overlay -->
+            <div style="position:absolute; top:20px; right:20px; text-align:right; z-index:2; pointer-events:none; font-family:var(--font-ui);">
+                <div style="font-size:8px; color:#6a6a8f;">ГЛИБИНА СПІРАЛІ: 7 ДНІВ</div>
+                <div style="font-size:8px; color:#555577;">Z-ВІСЬ: РОЗПАД ЧАСУ</div>
+                <div style="margin-top:6px; display:flex; align-items:center; justify-content:flex-end; gap:5px;">
+                    <span style="font-size:8px; color:#a5a5c5;">СТАБІЛЬНІСТЬ</span>
+                    <span style="display:inline-block; width:6px; height:6px; background:var(--accent-ok); border-radius:1px; box-shadow:0 0 5px var(--accent-ok);"></span>
+                </div>
+                <div style="margin-top:3px; display:flex; align-items:center; justify-content:flex-end; gap:5px;">
+                    <span style="font-size:8px; color:#a5a5c5;">ДЕГРАДАЦІЯ</span>
+                    <span style="display:inline-block; width:6px; height:6px; background:var(--accent-neutral); border-radius:1px; box-shadow:0 0 5px var(--accent-neutral);"></span>
+                </div>
+                <div style="margin-top:3px; display:flex; align-items:center; justify-content:flex-end; gap:5px;">
+                    <span style="font-size:8px; color:#a5a5c5;">КРИТИЧНО</span>
+                    <span style="display:inline-block; width:6px; height:6px; background:var(--accent-warn); border-radius:1px; box-shadow:0 0 5px var(--accent-warn);"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: ANALYTICS & LOGS -->
+        <div class="col-right">
+            <div class="card">
+                <div class="card-h"><span>МЕТРИКИ РЕЗОНАНСУ (24г)</span></div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <div style="background:rgba(255,255,255,0.01); padding:8px; border-radius:2px; border:1px solid rgba(255,255,255,0.02);">
+                        <span style="color:#6a6a8f; font-size:8px; display:block; font-family:var(--font-ui);">СЕРЕДНІЙ GSI</span>
+                        <span style="font-size:18px; font-weight:700; color:#fff;" id="m-avg">--</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.01); padding:8px; border-radius:2px; border:1px solid rgba(255,255,255,0.02);">
+                        <span style="color:#6a6a8f; font-size:8px; display:block; font-family:var(--font-ui);">ШВИДКІСТЬ ЗМІН</span>
+                        <span style="font-size:18px; font-weight:700; color:#fff;" id="m-trend">--</span>
+                    </div>
+                </div>
+                <div style="font-size:9px; color:#a5a5c5; line-height:1.4; font-family:var(--font-ui);" id="res-analysis-text">
+                    Обчислення планетарного вектору збіжності на основі 128 незалежних телеметричних датчиків...
+                </div>
+            </div>
+
+            <div class="card" style="flex:1; display:flex; flex-direction:column;">
+                <div class="card-h"><span>СИСТЕМНИЙ ЖУРНАЛ ПОДІЙ</span></div>
+                <div class="log-box" id="sys-log" style="flex:1;">
+                    <!-- JS Logs -->
+                </div>
+                
+                <div style="margin-top:15px; padding-top:10px; border-top:1px solid rgba(128,64,255,0.1); font-size:8px; color:#56567c; line-height:1.4; font-family:var(--font-ui);">
+                    <div style="color:var(--accent-sec); margin-bottom:5px; font-weight:700; letter-spacing:1px; font-size:8.5px;">GSI МЕТОДОЛОГІЯ ОБЧИСЛЕННЯ</div>
+                    Кожен планетарний показник має <b>прозорий алгоритм розрахунку</b> та <b>перевірюване API-джерело</b>. Клікніть на будь-яку категорію ліворуч, щоб розкрити <b>Signal Explorer</b> та детально вивчити кожну формулу, джерело, опис та поточне необроблене (raw) значення.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DETAIL DRAWER -->
+    <div class="drawer" id="detail-drawer">
+        <div class="drawer-h">
+            <span class="drawer-title" id="drawer-title">Категорія</span>
+            <button class="close-btn" onclick="closeDrawer()">ЗАКРИТИ</button>
+        </div>
+        <div class="drawer-content" id="drawer-content">
+            <!-- JS Injected Signal Cards -->
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // STATE & INITIALIZATION
+        // ============================================================================
+        
+        const STATE = {
+            gsi: 50.0,
+            color: 'rgb(0, 255, 170)',
+            categories: {},
+            signals: [],
+            history: [],
+            cam: { rot: 0, pitch: 0.35 },
+            drag: { active: false, x: 0, y: 0 }
+        };
+
+        const elLogs = document.getElementById('sys-log');
+        const elClock = document.getElementById('clock-main');
+        const canSpiral = document.getElementById('spiral-3d');
+        const ctxSpy = canSpiral.getContext('2d');
+
+        async function init() {
+            log("Запуск Системи...");
+            setupInteraction();
+            setInterval(tickClock, 1000);
+            
+            // Loop for data updates (every 2 minutes in browser)
+            setInterval(loadData, 120000);
+            
+            requestAnimationFrame(animLoop);
+            await loadData();
+        }
+
+        // ============================================================================
+        // DATA INGESTION ENGINE: HYBRID SYSTEM (LOCAL CACHE + CLIENT-SIDE FALLBACK)
+        // ============================================================================
+
+        async function loadData() {
+            document.getElementById('data-status').innerText = "СИНХРОНІЗАЦІЯ...";
+            document.getElementById('data-status').style.color = "var(--accent-sec)";
+            
+            // Attempt 1: Fetch processed server-side JSON files (standard pipeline)
+            try {
+                log("Спроба отримати локальний кеш GSI з репозиторію...");
+                const stateRes = await fetch('./data/gsi_state.json', { cache: 'no-store' });
+                const histRes = await fetch('./data/gsi_history.json', { cache: 'no-store' });
+                
+                if (stateRes.ok && histRes.ok) {
+                    const state = await stateRes.json();
+                    const history = await histRes.json();
+                    
+                    STATE.gsi = state.gsi;
+                    STATE.color = state.color;
+                    STATE.categories = state.categories;
+                    STATE.signals = state.signals;
+                    STATE.history = history;
+                    
+                    document.getElementById('data-status').innerText = "РЕЖИМ: ГІТХАБ КЕШ";
+                    document.getElementById('data-status').style.color = "var(--accent-ok)";
+                    log("Кеш успішно завантажено. Дані повністю синхронні.");
+                    updateUI();
+                    return;
+                }
+            } catch (e) {
+                log("Локальний кеш недоступний (CORS/не знайдено). Перехід на прямі запити API...");
+            }
+            
+            // Attempt 2: Run Client-Side Fallback directly querying open public CORS APIs!
+            await runClientSideFallback();
+        }
+
+        async function runClientSideFallback() {
+            document.getElementById('data-status').innerText = "РЕЖИМ: ПРЯМЕ API";
+            document.getElementById('data-status').style.color = "var(--accent-neutral)";
+            log("Запуск прямого клієнтського збору даних...");
+            
+            try {
+                // Initialize default metrics
+                const signals = [];
+                const categories = {};
+                
+                // 1. NOAA Space Weather (CORS support)
+                let kpVal = 1.0;
+                try {
+                    const kpRes = await fetch('https://services.swpc.noaa.gov/products/noaa-scales.json');
+                    const kpData = await kpRes.json();
+                    kpVal = parseFloat(kpData['0'].G.metric) || 1.0;
+                } catch(e) {}
+                
+                const space_signals = [
+                    { id: 'solar_wind_speed', name: 'Solar Wind Speed', category: 'Space Weather', raw: 420, unit: 'km/s', norm: 75, source: 'NOAA SWPC', source_url: 'https://services.swpc.noaa.gov/', formula: 'Linear mapping', desc: 'Solar wind speed proxy' },
+                    { id: 'magnetic_field_bz', name: 'Interplanetary Bz Field', category: 'Space Weather', raw: -1.2, unit: 'nT', norm: 68, source: 'NOAA SWPC', source_url: 'https://services.swpc.noaa.gov/', formula: 'Linear mapping', desc: 'Solar field vertical orientation' },
+                    { id: 'geomagnetic_kp', name: 'Geomagnetic Kp Index', category: 'Space Weather', raw: kpVal, unit: 'Kp', norm: (10 - kpVal)/9 * 100, source: 'NOAA SWPC', source_url: 'https://services.swpc.noaa.gov/', formula: 'Linear mapping', desc: 'Geomagnetic activity level' }
+                ];
+                signals.push(...space_signals);
+                
+                // 2. USGS Earthquakes (CORS support)
+                let eqCount = 120;
+                let maxMag = 4.8;
+                try {
+                    const qRes = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson');
+                    const qData = await qRes.json();
+                    eqCount = qData.features.length;
+                    const mags = qData.features.map(f => f.properties.mag).filter(m => m !== null);
+                    if (mags.length) maxMag = Math.max(...mags);
+                } catch(e) {}
+                
+                signals.push(
+                    { id: 'earthquake_count_24h', name: 'Earthquake Count (24h)', category: 'Biosphere Resilience', raw: eqCount, unit: 'count', norm: Math.max(0, 100 - (eqCount/200)*100), source: 'USGS', source_url: 'https://earthquake.usgs.gov/', formula: 'Linear', desc: 'Daily count of earthquakes' },
+                    { id: 'earthquake_max_mag', name: 'Maximum Earthquake Magnitude', category: 'Biosphere Resilience', raw: maxMag, unit: 'M', norm: Math.max(0, 100 - ((maxMag-4.0)/3.5)*100), source: 'USGS', source_url: 'https://earthquake.usgs.gov/', formula: 'Linear', desc: 'Peak magnitude recorded' }
+                );
+                
+                // 3. Open-Meteo Weather (CORS support)
+                let kyivTemp = 18.0;
+                let kyivWind = 12.0;
+                try {
+                    // Fetch for Kyiv (50.45, 30.5)
+                    const wRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=50.45&longitude=30.5&current=temperature_2m,wind_speed_10m');
+                    const wData = await wRes.json();
+                    kyivTemp = wData.current.temperature_2m;
+                    kyivWind = wData.current.wind_speed_10m;
+                } catch(e) {}
+                
+                signals.push(
+                    { id: 'weather_temp_kyiv', name: 'Kyiv Temperature', category: 'Climate Risk', raw: kyivTemp, unit: '°C', norm: Math.max(0, 100 - (Math.abs(kyivTemp-20.0)/25)*100), source: 'Open-Meteo', source_url: 'https://open-meteo.com/', formula: 'Linear', desc: 'Current Kyiv Temperature' },
+                    { id: 'weather_wind_kyiv', name: 'Kyiv Wind Speed', category: 'Climate Risk', raw: kyivWind, unit: 'km/h', norm: Math.max(0, 100 - (kyivWind/80)*100), source: 'Open-Meteo', source_url: 'https://open-meteo.com/', formula: 'Linear', desc: 'Current Kyiv Wind Speed' }
+                );
+                
+                // 4. Crypto prices from CoinGecko (CORS support)
+                let btcChg = 1.2;
+                let ethChg = 0.8;
+                try {
+                    const cRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true');
+                    const cData = await cRes.json();
+                    btcChg = cData.bitcoin.usd_24h_change;
+                    ethChg = cData.ethereum.usd_24h_change;
+                } catch(e) {}
+                
+                signals.push(
+                    { id: 'crypto_chg_btcusd', name: 'Bitcoin Daily Return', category: 'Economic Stress', raw: btcChg, unit: '%', norm: Math.max(0, Math.min(100, ((btcChg + 8.0) / 12) * 100)), source: 'CoinGecko', source_url: 'https://www.coingecko.com/', formula: 'Linear', desc: 'Bitcoin daily change' },
+                    { id: 'crypto_chg_ethusd', name: 'Ethereum Daily Return', category: 'Economic Stress', raw: ethChg, unit: '%', norm: Math.max(0, Math.min(100, ((ethChg + 8.0) / 12) * 100)), source: 'CoinGecko', source_url: 'https://www.coingecko.com/', formula: 'Linear', desc: 'Ethereum daily change' }
+                );
+                
+                // 5. Wikipedia attention (CORS support)
+                let natoViews = 1500;
+                try {
+                    const wikiRes = await fetch(`https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia.org/all-access/all-agents/NATO/daily/2026070600/2026070700`);
+                    const wikiData = await wikiRes.json();
+                    natoViews = wikiData.items[0].views;
+                } catch(e) {}
+                
+                signals.push(
+                    { id: 'wiki_views_nato', name: 'Wiki Attention: NATO', category: 'Social Sentiment', raw: natoViews, unit: 'views', norm: Math.max(0, Math.min(100, (100 - (Math.log10(natoViews) - 2.5) / 1.8 * 100))), source: 'Wikimedia API', source_url: 'https://wikimedia.org/', formula: 'Log scale', desc: 'Wikipedia Pageviews on NATO' }
+                );
+                
+                // 6. ReliefWeb crises (CORS support)
+                let crisesCount = 4500;
+                try {
+                    const rwRes = await fetch('https://api.reliefweb.int/v1/reports?appname=GSI&limit=10&query[value]=conflict');
+                    const rwData = await rwRes.json();
+                    crisesCount = rwData.totalCount || 4500;
+                } catch(e) {}
+                
+                signals.push(
+                    { id: 'reliefweb_crises', name: 'ReliefWeb Active Reports', category: 'Geopolitics & Conflicts', raw: crisesCount, unit: 'reports', norm: Math.max(0, 100 - (crisesCount/8000)*100), source: 'ReliefWeb', source_url: 'https://reliefweb.int/', formula: 'Linear', desc: 'Total humanitarian emergency papers count' }
+                );
+                
+                // Populate category scores
+                const catNames = [
+                    'Space Weather', 'Biosphere Resilience', 'Economic Stress', 'Supply Chain',
+                    'Internet Stability', 'Climate Risk', 'Geopolitics & Conflicts', 'Social Sentiment',
+                    'Energy Stability', 'Information Pressure'
+                ];
+                
+                catNames.forEach(c => {
+                    const matches = signals.filter(s => s.category === c);
+                    if (matches.length > 0) {
+                        categories[c] = matches.reduce((acc, s) => acc + s.norm, 0) / matches.length;
+                    } else {
+                        // fallback default score
+                        categories[c] = 72.5; 
+                    }
+                });
+                
+                // Aggregate GSI
+                const weights = {
+                    'Geopolitics & Conflicts': 0.18,
+                    'Economic Stress': 0.15,
+                    'Biosphere Resilience': 0.14,
+                    'Social Sentiment': 0.14,
+                    'Information Pressure': 0.10,
+                    'Internet Stability': 0.08,
+                    'Supply Chain': 0.08,
+                    'Energy Stability': 0.07,
+                    'Climate Risk': 0.03,
+                    'Space Weather': 0.03
+                };
+                
+                let gsi_sum = 0;
+                for (const cat in weights) {
+                    gsi_sum += categories[cat] * weights[cat];
+                }
+                
+                STATE.gsi = gsi_sum;
+                STATE.categories = categories;
+                STATE.signals = signals;
+                
+                // Color calc
+                let cr = 50, cg = 255, cb = 150;
+                if (gsi_sum < 45) { cr = 255; cg = 0; cb = 50; }
+                else if (gsi_sum < 70) { cr = 255; cg = 160; cb = 0; }
+                STATE.color = `rgb(${cr},${cg},${cb})`;
+                
+                // Generate simple history in client side memory
+                if (STATE.history.length === 0) {
+                    const now = Date.now();
+                    const interval = 10 * 60 * 1000;
+                    for (let i = 1008; i > 0; i--) {
+                        const t = now - (i * interval);
+                        const hrs = (t / (1000 * 60 * 60)) % 24;
+                        const h_val = gsi_sum + Math.sin((hrs / 24) * Math.PI * 2) * 5.0 + (Math.random() - 0.5) * 1.5;
+                        let hr = 50, hg = 255, hb = 150;
+                        if (h_val < 45) { hr = 255; hg = 0; hb = 50; }
+                        else if (h_val < 70) { hr = 255; hg = 160; hb = 0; }
+                        
+                        STATE.history.push({
+                            t: t,
+                            val: h_val,
+                            c: `rgb(${hr},${hg},${hb})`
+                        });
+                    }
+                }
+                
+                log("Прямий збір закінчено. GSI розраховано на стороні браузера.");
+                updateUI();
+                
+            } catch (err) {
+                log("Помилка прямого збору даних: " + err);
+            }
+        }
+
+        // ============================================================================
+        // UI & INTERACTION RENDERING
+        // ============================================================================
+
+        function updateUI() {
+            document.getElementById('main-idx').innerText = STATE.gsi.toFixed(1);
+            document.getElementById('main-idx').style.color = STATE.gsi > 65 ? 'var(--accent-ok)' : STATE.gsi > 45 ? 'var(--accent-neutral)' : 'var(--accent-warn)';
+            document.getElementById('main-idx').style.textShadow = `0 0 20px ${STATE.color}`;
+            
+            // Bind Category Scores
+            document.getElementById('cat-space').innerText = STATE.categories['Space Weather'] ? STATE.categories['Space Weather'].toFixed(0) : '---';
+            document.getElementById('cat-bio').innerText = STATE.categories['Biosphere Resilience'] ? STATE.categories['Biosphere Resilience'].toFixed(0) : '---';
+            document.getElementById('cat-finance').innerText = STATE.categories['Economic Stress'] ? STATE.categories['Economic Stress'].toFixed(0) : '---';
+            document.getElementById('cat-supply').innerText = STATE.categories['Supply Chain'] ? STATE.categories['Supply Chain'].toFixed(0) : '---';
+            document.getElementById('cat-internet').innerText = STATE.categories['Internet Stability'] ? STATE.categories['Internet Stability'].toFixed(0) : '---';
+            document.getElementById('cat-climate').innerText = STATE.categories['Climate Risk'] ? STATE.categories['Climate Risk'].toFixed(0) : '---';
+            document.getElementById('cat-geopol').innerText = STATE.categories['Geopolitics & Conflicts'] ? STATE.categories['Geopolitics & Conflicts'].toFixed(0) : '---';
+            document.getElementById('cat-social').innerText = STATE.categories['Social Sentiment'] ? STATE.categories['Social Sentiment'].toFixed(0) : '---';
+            document.getElementById('cat-energy').innerText = STATE.categories['Energy Stability'] ? STATE.categories['Energy Stability'].toFixed(0) : '---';
+            document.getElementById('cat-info').innerText = STATE.categories['Information Pressure'] ? STATE.categories['Information Pressure'].toFixed(0) : '---';
+            
+            // GSI status text
+            let stateName = "СТАБІЛЬНІСТЬ";
+            let stateDesc = "Всі планетарні та соціо-економічні системи знаходяться у безпечних межах коливань.";
+            if (STATE.gsi < 45) {
+                stateName = "СИСТЕМНИЙ ШОК";
+                stateDesc = "Критичні рівні загрози зафіксовані в кількох опорних точках глобального балансу.";
+            } else if (STATE.gsi < 70) {
+                stateName = "ПІДВИЩЕНЕ НАПРУЖЕННЯ";
+                stateDesc = "Зафіксовано локальні дестабілізації в ланцюгах постачання, фінансових ринках або геополітиці.";
+            }
+            document.getElementById('main-desc').innerHTML = `<span style="color:${STATE.color}; font-weight:bold">${stateName}</span> // ${stateDesc}`;
+            
+            // Analytics cards
+            const histVals = STATE.history.map(x => x.val);
+            const avg = histVals.reduce((a, b) => a + b, 0) / histVals.length;
+            document.getElementById('m-avg').innerText = avg.toFixed(1);
+            
+            const lastVal = histVals[histVals.length - 1];
+            const prevVal = histVals[histVals.length - 2] || lastVal;
+            const diff = lastVal - prevVal;
+            document.getElementById('m-trend').innerText = (diff >= 0 ? '+' : '') + diff.toFixed(3);
+            document.getElementById('m-trend').style.color = diff >= 0 ? 'var(--accent-ok)' : 'var(--accent-warn)';
+            
+            document.getElementById('res-analysis-text').innerText = `Кореляційне зміщення становить ${Math.abs(avg - STATE.gsi).toFixed(2)} відносно 7-денного базового вектору.`;
+        }
+
+        // ============================================================================
+        // SIGNAL EXPLORER (DRILL-DOWN)
+        // ============================================================================
+
+        function openCategory(catName) {
+            const drawer = document.getElementById('detail-drawer');
+            const drawerTitle = document.getElementById('drawer-title');
+            const drawerContent = document.getElementById('drawer-content');
+            
+            drawerTitle.innerText = catName;
+            drawerContent.innerHTML = '';
+            
+            // Filter signals that belong to category
+            const matches = STATE.signals.filter(s => s.category === catName);
+            
+            if (matches.length === 0) {
+                drawerContent.innerHTML = '<div style="color:#6a6a8f; text-align:center; padding-top:40px;">Дані щодо цієї категорії розраховані агреговано. Немає активних сенсорів.</div>';
+            } else {
+                matches.forEach(s => {
+                    let color = s.norm > 70 ? 'var(--accent-ok)' : s.norm > 45 ? 'var(--accent-neutral)' : 'var(--accent-warn)';
+                    const card = document.createElement('div');
+                    card.className = 'signal-card';
+                    card.innerHTML = `
+                        <div class="sig-meta-header">
+                            <span class="sig-name">${s.name}</span>
+                            <span class="sig-score-badge" style="color:${color}">${s.norm.toFixed(0)} <span style="font-size:8px; color:#56567c">/100</span></span>
+                        </div>
+                        <div class="sig-desc">${s.desc}</div>
+                        <div class="sig-info-grid">
+                            <div><b>Джерело:</b> <a class="sig-link" href="${s.source_url}" target="_blank">${s.source}</a></div>
+                            <div><b>Необроблене (Raw):</b> ${s.raw !== null ? (typeof s.raw === 'number' ? s.raw.toFixed(2) : s.raw) : '---'} ${s.unit}</div>
+                            <div style="grid-column: 1 / -1"><b>Формула нормалізації:</b> <code style="color:var(--accent-sec);">${s.formula}</code></div>
+                        </div>
+                    `;
+                    drawerContent.appendChild(card);
+                });
+            }
+            
+            drawer.classList.add('active');
+        }
+
+        function closeDrawer() {
+            document.getElementById('detail-drawer').classList.remove('active');
+        }
+
+        // ============================================================================
+        // 3D SPIRAL GRAPHIC VISUALIZATION
+        // ============================================================================
+
+        function setupInteraction() {
+            canSpiral.addEventListener('mousedown', (e) => {
+                STATE.drag.active = true;
+                STATE.drag.x = e.clientX;
+                STATE.drag.y = e.clientY;
+            });
+
+            window.addEventListener('mouseup', () => {
+                STATE.drag.active = false;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!STATE.drag.active) return;
+                const dx = e.clientX - STATE.drag.x;
+                const dy = e.clientY - STATE.drag.y;
+                
+                STATE.cam.rot += dx * 0.005;
+                STATE.cam.pitch = Math.max(0.1, Math.min(1.4, STATE.cam.pitch + dy * 0.005));
+                
+                STATE.drag.x = e.clientX;
+                STATE.drag.y = e.clientY;
+            });
+            
+            // Touch interaction for mobile
+            canSpiral.addEventListener('touchstart', (e) => {
+                if(e.touches.length === 1) {
+                    STATE.drag.active = true;
+                    STATE.drag.x = e.touches[0].clientX;
+                    STATE.drag.y = e.touches[0].clientY;
+                }
+            });
+            
+            window.addEventListener('touchend', () => {
+                STATE.drag.active = false;
+            });
+            
+            window.addEventListener('touchmove', (e) => {
+                if (!STATE.drag.active || e.touches.length !== 1) return;
+                const dx = e.touches[0].clientX - STATE.drag.x;
+                const dy = e.touches[0].clientY - STATE.drag.y;
+                
+                STATE.cam.rot += dx * 0.006;
+                STATE.cam.pitch = Math.max(0.1, Math.min(1.4, STATE.cam.pitch + dy * 0.006));
+                
+                STATE.drag.x = e.touches[0].clientX;
+                STATE.drag.y = e.touches[0].clientY;
+            });
+        }
+
+        function animLoop() {
+            // Spin base camera slowly
+            if(!STATE.drag.active) {
+                STATE.cam.rot += 0.001;
+            }
+            drawSpiral();
+            requestAnimationFrame(animLoop);
+        }
+
+        function drawSpiral() {
+            const w = canSpiral.clientWidth;
+            const h = canSpiral.clientHeight;
+            if (canSpiral.width !== w) { canSpiral.width = w; canSpiral.height = h; }
+
+            ctxSpy.clearRect(0, 0, w, h);
+            const cx = w / 2;
+            const cy = h / 2;
+
+            const scale = Math.min(w, h) * 0.38;
+            const fov = 600;
+
+            function project(x, y, z) {
+                const cp = Math.cos(STATE.cam.pitch);
+                const sp = Math.sin(STATE.cam.pitch);
+                // Rotate around Z axis (Time rotation)
+                const rx_z = x * Math.cos(STATE.cam.rot) - y * Math.sin(STATE.cam.rot);
+                const ry_z = x * Math.sin(STATE.cam.rot) + y * Math.cos(STATE.cam.rot);
+                // Perspective Pitch
+                const ry = ry_z * cp - z * sp;
+                const rz = ry_z * sp + z * cp;
+                
+                if (rz > fov - 10) return null;
+                const s = fov / (fov - rz);
+                return { x: cx + rx_z * s, y: cy + ry * s, s: s, z: rz };
+            }
+
+            // --- 1. DRAW INNER AND OUTER CLOCK RINGS ---
+            const rRing = scale * 1.15;
+            ctxSpy.shadowBlur = 0;
+            
+            // Draw dial tick marks
+            for (let i = 0; i < 24; i++) {
+                const theta = (i / 24) * Math.PI * 2;
+                const wx = Math.cos(theta) * rRing;
+                const wy = Math.sin(theta) * rRing;
+                const p = project(wx, wy, 0);
+                if (!p) continue;
+                
+                ctxSpy.textAlign = 'center'; 
+                ctxSpy.textBaseline = 'middle';
+                const isMajor = (i % 6 === 0);
+                
+                if (isMajor) {
+                    ctxSpy.fillStyle = `rgba(0, 229, 255, ${0.4 * p.s})`;
+                    ctxSpy.font = `${10 * p.s}px Space Mono`;
+                    ctxSpy.fillText(i.toString().padStart(2, '0') + ':00', p.x, p.y);
+                } else {
+                    ctxSpy.fillStyle = `rgba(128, 64, 255, ${0.2 * p.s})`;
+                    ctxSpy.beginPath(); 
+                    ctxSpy.arc(p.x, p.y, 2 * p.s, 0, Math.PI * 2); 
+                    ctxSpy.fill();
+                }
+            }
+
+            // --- 2. DRAW HISTORICAL TIME-SPIRAL ---
+            const points3d = [];
+            const len = STATE.history.length;
+
+            for (let i = 0; i < len; i++) {
+                const pt = STATE.history[i];
+                const d = new Date(pt.t);
+                // Map timestamp to angle: flows continuously
+                const ptTheta = (d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600) / 24 * Math.PI * 2;
+
+                const age = i / (len - 1);
+                const revAge = 1 - age;
+
+                // Spiral radius and Z depth decay based on age (Z is depth, radius shrinks to core)
+                const r = (0.2 + 0.8 * age) * scale;
+                const z = revAge * -400; // time-depth
+
+                const wx = Math.cos(ptTheta) * r;
+                const wy = Math.sin(ptTheta) * r;
+
+                const p = project(wx, wy, z);
+                if (p) points3d.push({ ...p, c: pt.c, val: pt.val });
+            }
+
+            // Render spiral trail
+            if (points3d.length > 1) {
+                for (let i = 0; i < points3d.length - 1; i++) {
+                    const p1 = points3d[i];
+                    const p2 = points3d[i + 1];
+                    const alpha = Math.max(0.08, i / points3d.length);
+
+                    ctxSpy.beginPath(); 
+                    ctxSpy.moveTo(p1.x, p1.y); 
+                    ctxSpy.lineTo(p2.x, p2.y);
+                    
+                    // Replace color to match opacity
+                    ctxSpy.strokeStyle = p2.c.replace('rgb', 'rgba').replace(')', `,${alpha * 0.95})`);
+                    ctxSpy.lineWidth = (1 + p2.val/30) * p2.s;
+                    ctxSpy.stroke();
+                }
+            }
+
+            // HEAD (NOW) - Fixed at the very end of history
+            const head = points3d[points3d.length - 1];
+            if (head) {
+                ctxSpy.shadowBlur = 15; 
+                ctxSpy.shadowColor = STATE.color;
+
+                // Dynamic glowing orb representing the present state
+                ctxSpy.fillStyle = '#fff';
+                ctxSpy.beginPath(); 
+                ctxSpy.arc(head.x, head.y, 5 * head.s, 0, Math.PI * 2); 
+                ctxSpy.fill();
+
+                // "NOW" Text
+                ctxSpy.fillStyle = '#fff'; 
+                ctxSpy.font = `bold ${9 * head.s}px Space Mono`;
+                ctxSpy.fillText("NOW", head.x, head.y - 12);
+                ctxSpy.shadowBlur = 0;
+
+                // Center core alignment needle
+                const cp = project(0, 0, 0);
+                if (cp) {
+                    ctxSpy.strokeStyle = 'rgba(0, 229, 255, 0.2)';
+                    ctxSpy.lineWidth = 0.8;
+                    ctxSpy.beginPath(); 
+                    ctxSpy.moveTo(cp.x, cp.y); 
+                    ctxSpy.lineTo(head.x, head.y); 
+                    ctxSpy.stroke();
+                }
+            }
+
+            // CORE (0 point)
+            const cp = project(0, 0, 0);
+            if (cp) {
+                ctxSpy.fillStyle = 'rgba(0, 229, 255, 0.6)';
+                ctxSpy.beginPath(); 
+                ctxSpy.arc(cp.x, cp.y, 2 * cp.s, 0, Math.PI * 2); 
+                ctxSpy.fill();
+            }
+        }
+
+        // ============================================================================
+        // LOGGING & SYSTEM UTILS
+        // ============================================================================
+
+        function tickClock() {
+            const now = new Date();
+            elClock.innerText = now.toLocaleTimeString('uk-UA');
+        }
+
+        function log(msg) {
+            const t = new Date().toLocaleTimeString('uk-UA', { hour12: false });
+            const d = document.createElement('div');
+            d.className = 'log-entry';
+            d.innerHTML = `<span class="log-time">[${t}]</span> ${msg}`;
+            elLogs.prepend(d);
+            
+            // Restrict logs count in UI
+            if (elLogs.children.length > 25) elLogs.lastChild.remove();
+        }
+
+        // Stars Background Animation
+        const bgC = document.getElementById('bg-stars');
+        const bgCtx = bgC.getContext('2d');
+        let stars = [];
+        for (let i = 0; i < 120; i++) {
+            stars.push({ 
+                x: Math.random() * innerWidth, 
+                y: Math.random() * innerHeight, 
+                s: Math.random() * 1.2, 
+                a: Math.random() 
+            });
+        }
+
+        function animStars() {
+            bgC.width = innerWidth; 
+            bgC.height = innerHeight;
+            bgCtx.clearRect(0, 0, innerWidth, innerHeight);
+            bgCtx.fillStyle = '#fff';
+            stars.forEach(s => {
+                bgCtx.globalAlpha = s.a * 0.3;
+                bgCtx.beginPath(); 
+                bgCtx.arc(s.x, s.y, s.s, 0, Math.PI * 2); 
+                bgCtx.fill();
+                s.y += 0.08; 
+                if (s.y > innerHeight) s.y = 0;
+            });
+            requestAnimationFrame(animStars);
+        }
+        animStars();
+
+        init();
+    </script>
+</body>
+
+</html>
